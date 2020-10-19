@@ -26,7 +26,7 @@ def RMW(roe_slice, stock_return_slice, market_capital_slice):
 
     # Calculate weighted average return of each group
     weak_return = sum(stock_return[col_index] * mkt_cap[col_index] / weak_mkt_cap for col_index in index[0: group_size])
-    robust_return = sum(stock_return[col_index] * mkt_cap[col_index] / weak_mkt_cap
+    robust_return = sum(stock_return[col_index] * mkt_cap[col_index] / robust_mkt_cap
                         for col_index in index[2 * group_size: stock_number])
 
     # Return RMW factor of the specific day
