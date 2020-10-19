@@ -1,2 +1,2 @@
-# RMWFactorAndBetaHedge
-This is a single factor trading strategy with beta hedging. 
+# 基于RMW盈利因子的市场中性策略
+本项目采用基于RMW盈利因子的单因子A股选股策略，使用沪深300股指期货对股票仓位的市场风险进行β对冲，组合为单因子市场中性策略。
