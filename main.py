@@ -2,13 +2,12 @@
 # coding: utf-8
 
 # Import standard packages
-import os
 import math
 import pandas as pd
 import datetime as dt
 
 # Import customised classes and interfaces
-import Account
+import Account as acc
 import Strategy as strt
 
 # -------------------- Parameter Setting -------------------- #
@@ -61,7 +60,7 @@ def main():
     performance = pd.DataFrame(columns=("Account", "HS300"))
 
     # Start back-test
-    account = Account.Account(INITIAL_CAPITAL)
+    account = acc.Account(INITIAL_CAPITAL)
     while trading_day <= DAYS:
         performance.iloc[trading_day] = daily_execution(trading_day, account)
         trading_day = trading_day + 1

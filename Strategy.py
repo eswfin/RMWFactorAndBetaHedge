@@ -37,18 +37,18 @@ def get_return_data(price_data_frame):
         price_row = day + 1
         day_slice = []
         for target in range(target_number):
-            day_slice[target] = math.log(price_data_frame.iloc[price_row, target] / price_data_frame.iloc[day, target])
+            day_slice.append(math.log(price_data_frame.iloc[price_row, target] / price_data_frame.iloc[day, target]))
         return_data_frame.loc[day] = day_slice
     return return_data_frame
 
 
 def get_rmw_factor_list(roe_list, stock_return_frame, market_capital_frame):
     # Initialize factor list
-    rmw_factor_list = pd.DataFrame(np.zeros(roe_list.shape), columns="RMW")
+    rmw_factor_list = pd.DataFrame(np.zeros((len(roe_list.index), 1)), columns=["RMW"])
 
     # Calculate RMW factor
-    for _ in range(len(roe_list)):
-        rmw_factor_list[_] = fct.RMW(roe_list.iloc[_], stock_return_frame[_], market_capital_frame[_])
+    for i in range(len(roe_list)):
+        rmw_factor_list.iloc[i] = fct.RMW(roe_list.iloc[i], stock_return_frame.iloc[i], market_capital_frame.iloc[i])
     return rmw_factor_list
 
 
