@@ -1,8 +1,15 @@
 # This is the main file of the project where I/O, main function, and all the parameters are contained.
+# coding: utf-8
 
+# Import standard packages
+import os
+import math
 import pandas as pd
-import datetime
+import datetime as dt
 
+# Import customised classes and interfaces
+import Account
+import Strategy as strt
 
 # -------------------- Parameter Setting -------------------- #
 # 0. Time parameters
@@ -21,25 +28,116 @@ MIN_HOLDING_DAY = 365
 CALC_WINDOW = 36  # The time period used in factor and beta calculations
 
 # 4. Path parameters
-DATA_STORE_PATH = './output/'
+INPUT_PATH = './Input/'
+OUTPUT_PATH = './Output/'
 
 
 # --------------------------- I/O ---------------------------- #
-STOCK_PRICE = pd.read_csv('componentPrice', index_col='Date')
-FUTURE_PRICE = pd.read_csv('IF.csv', index_col='Date')
-INDEX_PRICE = pd.read_csv('HS300.csv', index_col='Date')
-MKT_CAP = pd.read_csv('marketValue.csv', index_col='Date')
-ROE = pd.read_csv('ROE.csv', index_col='Date')
+STOCK_PRICE = pd.read_csv(INPUT_PATH + 'componentPrice.csv', index_col='Date')
+FUTURE_PRICE = pd.read_csv(INPUT_PATH + 'IF.csv', index_col='Date')
+INDEX_PRICE = pd.read_csv(INPUT_PATH + 'HS300.csv', index_col='Date')
+MKT_CAP = pd.read_csv(INPUT_PATH + 'marketValue.csv', index_col='Date')
+ROE = pd.read_csv(INPUT_PATH + 'ROE.csv', index_col='Date')
 
 
 # ----------------- Other Parameters Inferred ----------------- #
 DAYS = len(FUTURE_PRICE) - CALC_WINDOW - 1  # Actual trading days in back-test considering data loss
-STOCK_NAME = list(STOCK_PRICE.index)
+DATE_LIST = list(STOCK_PRICE.index)[1:]  # For back-test use
+STOCK_NAME = list(STOCK_PRICE.columns)
+
+
+# ---------------- Adjusted Data for Back-test ---------------- #
+stock_price, future_price, index_price = STOCK_PRICE.iloc[1:, :], FUTURE_PRICE.iloc[1:], INDEX_PRICE.iloc[1:]
+stock_return, index_return = strt.get_return_data(STOCK_PRICE), strt.get_return_data(INDEX_PRICE)
+roe, mkt_cap = ROE.iloc[1:, :], MKT_CAP.iloc[1:, :]
+rmw = strt.get_rmw_factor_list(roe, stock_return, mkt_cap)
 
 
 def main():
+    # Set global time variables
+    trading_day = 0
 
+    # Initialize performance data frame
+    performance = pd.DataFrame(columns=("Account", "HS300"))
+
+    # Start back-test
+    account = Account.Account(INITIAL_CAPITAL)
+    while trading_day <= DAYS:
+        performance.iloc[trading_day] = daily_execution(trading_day, account)
+        trading_day = trading_day + 1
     return -1
+
+
+def toDatetime(date_string):
+    return dt.datetime.strptime(date_string, "%Y-%m-%d")
+
+
+def daily_execution(trading_day, account):
+    actual_day = trading_day + CALC_WINDOW - 1  # Actual index corresponds to the price data frames
+
+    # Generate required moving data for factor and beta calculation
+    stock_price_moving = stock_price.iloc[actual_day - CALC_WINDOW + 1: actual_day + 1]
+    future_price_moving = future_price.iloc[actual_day - CALC_WINDOW + 1: actual_day + 1]
+    stock_return_moving = stock_return.iloc[actual_day - CALC_WINDOW + 1: actual_day + 1]
+    index_return_moving = index_return.iloc[actual_day - CALC_WINDOW + 1: actual_day + 1]
+    rmw_moving = rmw.iloc[actual_day - CALC_WINDOW + 1: actual_day + 1]
+
+    # Update latest price information
+    account.update_position_info(stock_price_moving, future_price_moving, actual_day)
+
+    # Get current holdings in position
+    holding_stock = account.stock
+    holding_future = account.future
+
+    # Check if on the day can sell any holding stock, and sell any sellable asset
+    buy_flag = 0
+    for _ in holding_stock:
+        if _.can_sell:
+            _.close_stock_position(account)
+            holding_stock.remove(_)
+            buy_flag = buy_flag + 1
+    holding_future.close_future_position(account)
+    holding_future.remove(holding_future[0])
+
+    # Update position changes to account
+    account.stock = holding_stock
+    account.future = holding_future
+    total_asset = account.get_market_value()  # Only cash and stocks remains in account at this stage
+
+    # Only buy new stock when at least one holding stock is sold
+    if buy_flag != 0 or trading_day == 0:
+        # Get selected stocks to invest according to RMW factor selection result
+        invest_list = strt.get_selected_stock(stock_return_moving, rmw_moving)
+        holding_list = [_.get_name() for _ in holding_stock]
+
+        # Get capital allocated to stock
+        stock_weight = strt.get_stock_weight(LEVERAGE)
+        stock_capital = total_asset * stock_weight
+
+        # Filter stocks in holding list from invest list
+        for _ in invest_list:
+            if _ in holding_list:
+                invest_list.remove(_)
+
+        # Calculate capital to invest into each new stock
+        holding_stock_value = sum(_.get_stock_value() for _ in holding_stock)
+        fund_per_new_stock = (stock_capital - holding_stock_value) / len(invest_list)
+
+        # Invest new stocks
+        for _ in invest_list:
+            price = stock_price_moving[_][-1]
+            lot = math.floor(fund_per_new_stock / price / 100)
+            purchase_day = actual_day
+            account.buy_stock(_, purchase_day, price, lot)
+
+    # Invest futures using beta hedging method
+    future_weight = strt.get_future_weight(LEVERAGE, account.stock, stock_return_moving, index_return_moving)
+    theoretical_future_fund = total_asset * future_weight
+    price = future_price_moving.iloc[-1]
+    lot = math.floor(min(theoretical_future_fund, account.cash) / LEVERAGE / price / 100)
+    account.short_future(price, lot, LEVERAGE)
+
+    return [total_asset, index_price.iloc[trading_day]]
 
 
 if __name__ == 'main':
