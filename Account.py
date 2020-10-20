@@ -26,13 +26,13 @@ class Account:
 
     def get_market_value(self):
         # Note that in main function, at the place where this function is called, the account only has cash and stocks
-        return self.cash + sum(_.get_stock_value() for _ in self.stock)
+        return round(self.cash + float(sum(_.get_stock_value() for _ in self.stock)), 2)
 
     def buy_stock(self, stock_code, purchase_day, purchase_price, lot):
-        new_stock = stk.Stock(stock_code, purchase_day, purchase_price, lot)
+        new_stock = stk.Stock(stock_code, purchase_day, round(float(purchase_price), 2), lot)
         self.stock.append(new_stock)
-        self.cash = self.cash - new_stock.get_stock_value()
+        self.cash = round(float(self.cash - new_stock.get_stock_value()), 2)
 
     def short_future(self, price, lot, leverage):
-        self.future.append(ft.Future(price, lot))
-        self.cash = float(self.cash - price * lot * 100 * leverage)
+        self.future.append(ft.Future(round(float(price), 2), lot))
+        self.cash = round(float(self.cash - price * lot * 100 * leverage), 2)

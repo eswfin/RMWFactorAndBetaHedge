@@ -5,6 +5,7 @@
 import math
 import time
 import pandas as pd
+import numpy as np
 import datetime as dt
 
 # Import customised classes and interfaces
@@ -54,7 +55,7 @@ rmw = strt.get_rmw_factor_list(roe, stock_return, mkt_cap)
 
 
 def main():
-    user_interface()
+    # user_interface()
 
     # Set global time variables
     trading_day = 0
@@ -69,10 +70,14 @@ def main():
         trading_day = trading_day + 1
 
     # Calculate net values
+    print('****** Back-test finished, generating output data ******')
+    columns = ['Account', 'HS300']
+    performance = pd.DataFrame(performance, columns=columns)
     performance_return = strt.get_return_data(performance)
-    net_value = pd.DataFrame({'Account': 1, 'HS300': 1})
-    for i in range(1, len(performance)):
-        net_value.iloc[i] = net_value.iloc[i - 1] * performance_return[i]
+    net_value = pd.DataFrame(np.ones((len(performance_return), 2)), columns=columns)
+    net_value.iloc[0] = [1, 1]
+    for i in range(1, len(net_value)):
+        net_value.iloc[i] = net_value.iloc[i - 1] * (net_value.iloc[0] + performance_return.iloc[i - 1])
     performance.to_csv(OUTPUT_PATH + 'performance.csv')
     performance_return.to_csv(OUTPUT_PATH + 'return.csv')
     net_value.to_csv(OUTPUT_PATH + 'netValue.csv')
@@ -141,10 +146,10 @@ def daily_execution(trading_day, account):
 
     # Invest futures using beta hedging method
     future_weight = float(strt.get_future_weight(LEVERAGE, account.stock, stock_return_moving, index_return_moving))
-    theoretical_future_fund = total_asset * future_weight
+    theoretical_future_fund = float(total_asset * future_weight)
     price = float(future_price_moving.iloc[-1])
-    print(account.cash)
-    lot = math.floor((min(theoretical_future_fund, account.cash) / LEVERAGE) / (price * 100))
+    cash = float(account.cash)
+    lot = math.floor((min(theoretical_future_fund, cash) / LEVERAGE) / (price * 100.00))
     account.short_future(price, lot, LEVERAGE)
 
     return [total_asset, float(index_price.iloc[trading_day])]

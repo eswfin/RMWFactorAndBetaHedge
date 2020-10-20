@@ -10,11 +10,11 @@ class Stock:
     def __init__(self, stock_code, purchase_day, purchase_price, lot):
         self.stock_code = stock_code
         self.purchase_day = purchase_day  # purchase_day is the index of the purchase date in the imported data
-        self.purchase_price = purchase_price
+        self.purchase_price = float(purchase_price)
         self.lot = lot
 
         self.current_day = purchase_day
-        self.current_price = purchase_price
+        self.current_price = self.purchase_price
         self.can_sell = False
 
     def update_stock_info(self, stock_price_slice, actual_day, date_list, min_holding_day):
@@ -35,4 +35,4 @@ class Stock:
         return self.stock_code
 
     def get_stock_value(self):
-        return self.lot * self.current_price * 100
+        return float(self.lot * self.current_price * 100)
