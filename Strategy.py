@@ -12,7 +12,7 @@ import math
 import Factor as fct
 
 # ----------------- Hyper-parameter Setting ----------------- #
-STEP = 200
+STEP = 120
 SEED = 100
 BATCH_SIZE = 36  # To avoid cross reference, manually set as equal to CALC_WINDOW in main.py
 INPUT_NODE = 1
@@ -21,6 +21,8 @@ REGULARIZER = 0.001
 LEARNING_RATE_BASE = 0.5
 LEARNING_RATE_DECAY = 0.95
 MOVING_AVERAGE_DECAY = 0.95
+
+CPU_NUMBER = 10  # !!!!!!! WARNING !!!!!!! PLEASE ADJUST ACCORDING TO YOUR OWN COMPUTER/SERVER
 
 
 # The method for generating return data from price data frame
@@ -77,7 +79,7 @@ def __get_alpha(stock_return_frame, factor_list):
 
     for _ in range(stock_number):
         beta = __get_beta(factor_list, stock_return_frame.iloc[:, _])
-        alpha_list[_] = stock_return_frame.iloc[-1, _] - beta * factor_list.iloc[-1]
+        alpha_list.append(stock_return_frame.iloc[-1, _] - beta * factor_list.iloc[-1])
     return alpha_list
 
 
@@ -123,17 +125,21 @@ def __backward(iterator):
     with tf.control_dependencies([train_step, ema_op]):
         train_op = tf.no_op(name="trainBeta")
 
-    with tf.Session() as sess:
+    with tf.Session(config=tf.ConfigProto(
+        device_count={'CPU': CPU_NUMBER},
+        intra_op_parallelism_threads=20 * CPU_NUMBER,
+        inter_op_parallelism_threads=20 * CPU_NUMBER
+    )) as sess:
         init_op = tf.global_variables_initializer()
         sess.run(init_op)
 
         for i in range(STEP):
-            x, y = sess.run(iterator.get_next())
-            _, lossValue, step = sess.run([train_op, loss, global_step], feed_dict={x: x, y: y})
+            factor, return_value = sess.run(iterator.get_next())
+            _, loss_value, step = sess.run([train_op, loss, global_step], feed_dict={x: factor, y: return_value})
 
-        if i % 50 == 0:
-            print("Step %d: Loss---%f" % (i, lossValue))
-    return sess.run(beta)
+            if i % 50 == 0:
+                print("Step %d: Loss---%f" % (i, loss_value))
+        return sess.run(beta)
 
 
 def get_stock_weight(leverage):

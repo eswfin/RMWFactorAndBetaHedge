@@ -99,8 +99,9 @@ def daily_execution(trading_day, account):
             _.close_stock_position(account)
             holding_stock.remove(_)
             buy_flag = buy_flag + 1
-    holding_future.close_future_position(account)
-    holding_future.remove(holding_future[0])
+    if trading_day != 0:
+        holding_future[0].close_future_position(account)
+        holding_future.remove(holding_future[0])
 
     # Update position changes to account
     account.stock = holding_stock
@@ -143,5 +144,5 @@ def daily_execution(trading_day, account):
     return [total_asset, index_price.iloc[trading_day]]
 
 
-if __name__ == 'main':
+if __name__ == '__main__':
     main()
