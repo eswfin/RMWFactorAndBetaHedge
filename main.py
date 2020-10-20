@@ -57,18 +57,22 @@ def main():
     trading_day = 0
 
     # Initialize performance data frame
-    performance = pd.DataFrame(columns=("Account", "HS300"))
+    performance = pd.DataFrame(columns=('Account', 'HS300'))
 
     # Start back-test
     account = acc.Account(INITIAL_CAPITAL)
     while trading_day <= DAYS:
         performance.iloc[trading_day] = daily_execution(trading_day, account)
         trading_day = trading_day + 1
-    return -1
 
-
-def toDatetime(date_string):
-    return dt.datetime.strptime(date_string, "%Y-%m-%d")
+    # Calculate net values
+    performance_return = strt.get_return_data(performance)
+    net_value = pd.DataFrame({'Account': 1, 'HS300': 1})
+    for i in range(1, len(performance)):
+        net_value.iloc[i] = net_value.iloc[i - 1] * performance_return[i]
+    performance.to_csv(OUTPUT_PATH + 'performance.csv')
+    performance_return.to_csv(OUTPUT_PATH + 'return.csv')
+    net_value.to_csv(OUTPUT_PATH + 'netValue.csv')
 
 
 def daily_execution(trading_day, account):
@@ -82,7 +86,7 @@ def daily_execution(trading_day, account):
     rmw_moving = rmw.iloc[actual_day - CALC_WINDOW + 1: actual_day + 1]
 
     # Update latest price information
-    account.update_position_info(stock_price_moving, future_price_moving, actual_day)
+    account.update_position_info(stock_price_moving, future_price_moving, actual_day, DATE_LIST, MIN_HOLDING_DAY)
 
     # Get current holdings in position
     holding_stock = account.stock
@@ -106,7 +110,7 @@ def daily_execution(trading_day, account):
     # Only buy new stock when at least one holding stock is sold
     if buy_flag != 0 or trading_day == 0:
         # Get selected stocks to invest according to RMW factor selection result
-        invest_list = strt.get_selected_stock(stock_return_moving, rmw_moving)
+        invest_list = strt.get_selected_stock(stock_return_moving, rmw_moving, MAX_HOLDING_STOCK)
         holding_list = [_.get_name() for _ in holding_stock]
 
         # Get capital allocated to stock
