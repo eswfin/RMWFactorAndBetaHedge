@@ -3,6 +3,7 @@
 # coding: utf-8
 
 # Import standard packages
+import statsmodels.formula.api as smf
 import tensorflow as tf
 import pandas as pd
 import numpy as np
@@ -12,7 +13,7 @@ import math
 import Factor as fct
 
 # ----------------- Hyper-parameter Setting ----------------- #
-STEP = 120
+STEP = 100
 SEED = 100
 BATCH_SIZE = 36  # To avoid cross reference, manually set as equal to CALC_WINDOW in main.py
 INPUT_NODE = 1
@@ -78,12 +79,19 @@ def __get_alpha(stock_return_frame, factor_list):
     alpha_list = []
 
     for _ in range(stock_number):
-        beta = __get_beta(factor_list, stock_return_frame.iloc[:, _])
-        alpha_list.append(stock_return_frame.iloc[-1, _] - beta * factor_list.iloc[-1])
+        beta = __get_beta_ols(factor_list, stock_return_frame.iloc[:, _])
+        alpha_list.append(float(stock_return_frame.iloc[-1, _] - beta * factor_list.iloc[-1]))
     return alpha_list
 
 
-def __get_beta(x, y):
+def __get_beta_ols(x, y):
+    data_frame = pd.concat((y, x), axis=1)
+    data_frame.columns = ['y', 'x']
+    model = smf.ols(formula='y~x', data=data_frame).fit()
+    return model.params[1]
+
+
+def __get_beta_machine_learning(x, y):
     # Form up training data panel
     x = np.array(x).reshape(BATCH_SIZE, 1)
     y = np.array(y).reshape(BATCH_SIZE, 1)
@@ -136,9 +144,6 @@ def __backward(iterator):
         for i in range(STEP):
             factor, return_value = sess.run(iterator.get_next())
             _, loss_value, step = sess.run([train_op, loss, global_step], feed_dict={x: factor, y: return_value})
-
-            if i % 50 == 0:
-                print("Step %d: Loss---%f" % (i, loss_value))
         return sess.run(beta)
 
 
@@ -154,7 +159,7 @@ def get_future_weight(leverage, holding_stock, stock_return_frame, index_return_
                                  for _ in holding_stock)
 
     # Calculate the market beta
-    beta = __get_beta(index_return_frame, stock_portfolio_return)
+    beta = __get_beta_ols(index_return_frame, stock_portfolio_return)
 
     # Return future weight under beta hedging rule
     future_weight = beta * leverage / (beta * leverage + 1)

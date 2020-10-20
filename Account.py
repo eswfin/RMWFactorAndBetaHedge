@@ -35,4 +35,4 @@ class Account:
 
     def short_future(self, price, lot, leverage):
         self.future.append(ft.Future(price, lot))
-        self.cash = self.cash - price * lot * 100 * leverage
+        self.cash = float(self.cash - price * lot * 100 * leverage)

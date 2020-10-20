@@ -3,6 +3,7 @@
 
 # Import standard packages
 import math
+import time
 import pandas as pd
 import datetime as dt
 
@@ -53,16 +54,18 @@ rmw = strt.get_rmw_factor_list(roe, stock_return, mkt_cap)
 
 
 def main():
+    user_interface()
+
     # Set global time variables
     trading_day = 0
 
     # Initialize performance data frame
-    performance = pd.DataFrame(columns=('Account', 'HS300'))
+    performance = []
 
     # Start back-test
     account = acc.Account(INITIAL_CAPITAL)
     while trading_day <= DAYS:
-        performance.iloc[trading_day] = daily_execution(trading_day, account)
+        performance.append(daily_execution(trading_day, account))
         trading_day = trading_day + 1
 
     # Calculate net values
@@ -77,6 +80,7 @@ def main():
 
 def daily_execution(trading_day, account):
     actual_day = trading_day + CALC_WINDOW - 1  # Actual index corresponds to the price data frames
+    print('******* On %s -- Day %d *******' % (DATE_LIST[actual_day], trading_day))
 
     # Generate required moving data for factor and beta calculation
     stock_price_moving = stock_price.iloc[actual_day - CALC_WINDOW + 1: actual_day + 1]
@@ -107,6 +111,7 @@ def daily_execution(trading_day, account):
     account.stock = holding_stock
     account.future = holding_future
     total_asset = account.get_market_value()  # Only cash and stocks remains in account at this stage
+    print('            Account value: %.2f' % total_asset)
 
     # Only buy new stock when at least one holding stock is sold
     if buy_flag != 0 or trading_day == 0:
@@ -135,13 +140,55 @@ def daily_execution(trading_day, account):
             account.buy_stock(_, purchase_day, price, lot)
 
     # Invest futures using beta hedging method
-    future_weight = strt.get_future_weight(LEVERAGE, account.stock, stock_return_moving, index_return_moving)
+    future_weight = float(strt.get_future_weight(LEVERAGE, account.stock, stock_return_moving, index_return_moving))
     theoretical_future_fund = total_asset * future_weight
-    price = future_price_moving.iloc[-1]
-    lot = math.floor(min(theoretical_future_fund, account.cash) / LEVERAGE / price / 100)
+    price = float(future_price_moving.iloc[-1])
+    print(account.cash)
+    lot = math.floor((min(theoretical_future_fund, account.cash) / LEVERAGE) / (price * 100))
     account.short_future(price, lot, LEVERAGE)
 
-    return [total_asset, index_price.iloc[trading_day]]
+    return [total_asset, float(index_price.iloc[trading_day])]
+
+
+def user_interface():
+    print('\n\n========================================\n'
+          'Welcome to the back-test analysis system\n'
+          '========================================\n'
+          '                    Author: Xin Yi\n'
+          '\n'
+          'The system will carry out a high number\n'
+          'of machine learning calculations. Please\n'
+          'make sure that you have carefully read\n'
+          'the instructions in README.md, and set\n'
+          'appropriate hyper-parameters according\n'
+          'to your computer condition, in case of\n'
+          'hardware damage.\n\n'
+          'Please also be advised that the runtime\n'
+          'can be significantly long due to the\n'
+          'heavy calculation, which may also drag\n'
+          'down your computer performances.\n')
+
+    select = True
+    while select:
+        choice = str(input('Proceed with caution? (Y/N)\n'))
+        if choice == 'y' or choice == 'Y':
+            print('The program starts after 5-second countdown.\n')
+            for i in range(5):
+                print(5-i)
+                time.sleep(1)
+            select = False
+            print('\n======== Back-test starts from now ========\n')
+            print('-- Total trading days: %d\n' % DAYS)
+            print('-- Start date: ' + START_DATE + '\n')
+            print('--Initial capital: %d\n\n' % INITIAL_CAPITAL)
+
+        elif choice == 'n' or choice == 'N':
+            print('Your prudent decision is very much\n'
+                  'appreciated. See you when you are ready!\n')
+            select = False
+            exit()
+        else:
+            print('That is not a valid input. Please try again:')
 
 
 if __name__ == '__main__':
