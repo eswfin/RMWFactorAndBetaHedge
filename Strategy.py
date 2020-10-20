@@ -10,7 +10,6 @@ import math
 
 # Import classes and interfaces
 import Factor as fct
-import main
 
 # ----------------- Hyper-parameter Setting ----------------- #
 STEP = 200
@@ -52,8 +51,9 @@ def get_rmw_factor_list(roe_list, stock_return_frame, market_capital_frame):
     return rmw_factor_list
 
 
-def get_selected_stock(stock_return_frame, factor_list):
+def get_selected_stock(stock_return_frame, factor_list, max_holding_stock):
     stock_number = len(stock_return_frame)
+    stock_name = list(stock_return_frame.columns)
     index = [_ for _ in range(stock_number)]
 
     # Get alpha list
@@ -65,9 +65,9 @@ def get_selected_stock(stock_return_frame, factor_list):
 
     # Select stocks to invest. Return a list of stock code strings
     selected_stock = []
-    for _ in range(main.MAX_HOLDING_STOCK):
+    for _ in range(max_holding_stock):
         if alpha[_] < 0:
-            selected_stock.append(main.STOCK_NAME[_])
+            selected_stock.append(stock_name[_])
     return selected_stock
 
 

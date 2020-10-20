@@ -13,12 +13,12 @@ class Account:
         self.stock = []
         self.future = []
 
-    def update_position_info(self, stock_price_frame, future_price_list, actual_day):
+    def update_position_info(self, stock_price_frame, future_price_list, actual_day, date_list, min_holding_day):
         # Update stock info
         holding_stock_number = len(self.stock)
         if holding_stock_number != 0:
             for _ in self.stock:
-                _.update_stock_info(stock_price_frame.iloc[-1], actual_day)
+                _.update_stock_info(stock_price_frame.iloc[-1], actual_day, date_list, min_holding_day)
 
         # Update future info
         if len(self.future):

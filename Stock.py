@@ -4,9 +4,6 @@
 # Import standard packages
 import datetime as dt
 
-# Import customised classes and interfaces
-import main
-
 
 class Stock:
 
@@ -20,17 +17,16 @@ class Stock:
         self.current_price = purchase_price
         self.can_sell = False
 
-    def update_stock_info(self, stock_price_slice, actual_day):
+    def update_stock_info(self, stock_price_slice, actual_day, date_list, min_holding_day):
         # Update trading date and current price
         self.current_day = actual_day
         self.purchase_price = stock_price_slice[self.stock_code]
 
         # Update selling status
         if not self.can_sell:
-            date_list = main.DATE_LIST
-            purchase_date = main.toDatetime(date_list[self.purchase_day])
-            current_date = main.toDatetime(date_list[actual_day])
-            self.can_sell = (current_date - purchase_date).days == main.MIN_HOLDING_DAY
+            purchase_date = dt.datetime.strptime(date_list[self.purchase_day], "%Y-%m-%d")
+            current_date = dt.datetime.strptime(date_list[actual_day], "%Y-%m-%d")
+            self.can_sell = (current_date - purchase_date).days == min_holding_day
 
     def close_stock_position(self, account):
         account.cash = account.cash + self.current_price * self.lot * 100
