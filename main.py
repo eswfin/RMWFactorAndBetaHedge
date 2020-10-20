@@ -6,7 +6,6 @@ import math
 import time
 import pandas as pd
 import numpy as np
-import datetime as dt
 
 # Import customised classes and interfaces
 import Account as acc

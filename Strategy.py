@@ -2,12 +2,13 @@
 # and beta calculation are stored.
 # coding: utf-8
 
+import math
+
+import numpy as np
+import pandas as pd
 # Import standard packages
 import statsmodels.formula.api as smf
 import tensorflow as tf
-import pandas as pd
-import numpy as np
-import math
 
 # Import classes and interfaces
 import Factor as fct
@@ -134,9 +135,9 @@ def __backward(iterator):
         train_op = tf.no_op(name="trainBeta")
 
     with tf.Session(config=tf.ConfigProto(
-        device_count={'CPU': CPU_NUMBER},
-        intra_op_parallelism_threads=20 * CPU_NUMBER,
-        inter_op_parallelism_threads=20 * CPU_NUMBER
+            device_count={'CPU': CPU_NUMBER},
+            intra_op_parallelism_threads=20 * CPU_NUMBER,
+            inter_op_parallelism_threads=20 * CPU_NUMBER
     )) as sess:
         init_op = tf.global_variables_initializer()
         sess.run(init_op)
