@@ -54,7 +54,7 @@ rmw = strt.get_rmw_factor_list(roe, stock_return, mkt_cap)
 
 
 def main():
-    # user_interface()
+    user_interface()
 
     # Set global time variables
     trading_day = 0
@@ -100,7 +100,6 @@ def daily_execution(trading_day, account):
     holding_stock = account.stock
     holding_future = account.future
     holding_list = [_.get_name() for _ in holding_stock]
-    print(holding_list)
     buy_flag = 0
     if trading_day != 0:
         # Check if on the day can sell any holding stock, and sell any sellable asset
@@ -117,17 +116,12 @@ def daily_execution(trading_day, account):
     account.future = holding_future
 
     total_asset = account.get_market_value()  # Only cash and stocks remains in account at this stage
-    print('            Account value: %.2f' % total_asset)
+    print('            Account value: %.2f\n' % total_asset)
 
     # Only buy new stock when at least one holding stock is sold
     if buy_flag != 0 or trading_day == 0:
         # Get selected stocks to invest according to RMW factor selection result
         invest_list = strt.get_selected_stock(stock_return_moving, rmw_moving, MAX_HOLDING_STOCK)
-        print('Selected stocks:')
-        print(invest_list)
-
-        print('Holding stocks:')
-        print(holding_list)
 
         # Get capital allocated to stock
         stock_weight = strt.get_stock_weight(LEVERAGE)

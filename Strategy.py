@@ -37,11 +37,8 @@ def get_return_data(price_data_frame):
     return_data_len = price_data_len - 1
     return_data_frame = pd.DataFrame(np.zeros((return_data_len, target_number)), columns=target_name)  # Init frame
     for day in range(return_data_len):
-        price_row = day + 1
-        day_slice = []
-        for target in range(target_number):
-            day_slice.append(math.log(price_data_frame.iloc[price_row, target] / price_data_frame.iloc[day, target]))
-        return_data_frame.loc[day] = day_slice
+        return_data_frame.iloc[day] = (price_data_frame.iloc[day + 1] - price_data_frame.iloc[day]) /\
+                                      price_data_frame.iloc[day]
     return return_data_frame
 
 

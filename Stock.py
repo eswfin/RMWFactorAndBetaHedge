@@ -37,5 +37,4 @@ class Stock:
     def get_stock_value(self):
         name = self.stock_code
         mv = float(self.lot * self.current_price * 100)
-        print("Stock looked up: %s ------ Current Value: %f" % (name, mv))
         return mv
