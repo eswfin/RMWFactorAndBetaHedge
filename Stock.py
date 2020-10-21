@@ -20,7 +20,7 @@ class Stock:
     def update_stock_info(self, stock_price_slice, actual_day, date_list, min_holding_day):
         # Update trading date and current price
         self.current_day = actual_day
-        self.purchase_price = stock_price_slice[self.stock_code]
+        self.current_price = stock_price_slice[self.stock_code]
 
         # Update selling status
         if not self.can_sell:
@@ -35,4 +35,7 @@ class Stock:
         return self.stock_code
 
     def get_stock_value(self):
-        return float(self.lot * self.current_price * 100)
+        name = self.stock_code
+        mv = float(self.lot * self.current_price * 100)
+        print("Stock looked up: %s ------ Current Value: %f" % (name, mv))
+        return mv

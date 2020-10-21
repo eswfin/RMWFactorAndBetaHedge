@@ -23,7 +23,7 @@ INITIAL_CAPITAL = 10000000
 LEVERAGE = 0.12
 
 # 3. Strategy parameters
-MAX_HOLDING_STOCK = 3
+MAX_HOLDING_STOCK = 2
 MIN_HOLDING_DAY = 365
 CALC_WINDOW = 36  # The time period used in factor and beta calculations
 
@@ -99,21 +99,23 @@ def daily_execution(trading_day, account):
     # Get current holdings in position
     holding_stock = account.stock
     holding_future = account.future
-
-    # Check if on the day can sell any holding stock, and sell any sellable asset
+    holding_list = [_.get_name() for _ in holding_stock]
+    print(holding_list)
     buy_flag = 0
-    for _ in holding_stock:
-        if _.can_sell:
-            _.close_stock_position(account)
-            holding_stock.remove(_)
-            buy_flag = buy_flag + 1
     if trading_day != 0:
+        # Check if on the day can sell any holding stock, and sell any sellable asset
+        for _ in holding_stock:
+            if _.can_sell:
+                _.close_stock_position(account)
+                holding_stock.remove(_)
+                buy_flag = buy_flag + 1
         holding_future[0].close_future_position(account)
         holding_future.remove(holding_future[0])
 
     # Update position changes to account
     account.stock = holding_stock
     account.future = holding_future
+
     total_asset = account.get_market_value()  # Only cash and stocks remains in account at this stage
     print('            Account value: %.2f' % total_asset)
 
@@ -121,7 +123,11 @@ def daily_execution(trading_day, account):
     if buy_flag != 0 or trading_day == 0:
         # Get selected stocks to invest according to RMW factor selection result
         invest_list = strt.get_selected_stock(stock_return_moving, rmw_moving, MAX_HOLDING_STOCK)
-        holding_list = [_.get_name() for _ in holding_stock]
+        print('Selected stocks:')
+        print(invest_list)
+
+        print('Holding stocks:')
+        print(holding_list)
 
         # Get capital allocated to stock
         stock_weight = strt.get_stock_weight(LEVERAGE)
