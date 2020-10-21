@@ -68,7 +68,7 @@ def get_selected_stock(stock_return_frame, factor_list, max_holding_stock):
     selected_stock = []
     for _ in range(max_holding_stock):
         if alpha[_] < 0:
-            selected_stock.append(stock_name[_])
+            selected_stock.append(stock_name[index[_]])
     return selected_stock
 
 

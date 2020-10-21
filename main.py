@@ -4,8 +4,8 @@
 # Import standard packages
 import math
 import time
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 # Import customised classes and interfaces
 import Account as acc
@@ -23,7 +23,7 @@ INITIAL_CAPITAL = 10000000
 LEVERAGE = 0.12
 
 # 3. Strategy parameters
-MAX_HOLDING_STOCK = 2
+MAX_HOLDING_STOCK = 10
 MIN_HOLDING_DAY = 365
 CALC_WINDOW = 36  # The time period used in factor and beta calculations
 
@@ -68,7 +68,7 @@ def main():
         performance.append(daily_execution(trading_day, account))
         trading_day = trading_day + 1
 
-    # Calculate net values
+    # Calculate net values and save back-test result to files
     print('****** Back-test finished, generating output data ******')
     columns = ['Account', 'HS300']
     performance = pd.DataFrame(performance, columns=columns)
@@ -80,6 +80,9 @@ def main():
     performance.to_csv(OUTPUT_PATH + 'performance.csv')
     performance_return.to_csv(OUTPUT_PATH + 'return.csv')
     net_value.to_csv(OUTPUT_PATH + 'netValue.csv')
+
+    # Print performance data
+    performance_management(performance_return, net_value)
 
 
 def daily_execution(trading_day, account):
@@ -193,6 +196,23 @@ def user_interface():
             exit()
         else:
             print('That is not a valid input. Please try again:')
+
+
+def performance_management(performance_return, net_value):
+    sharpe = (performance_return['Account'].mean() * np.sqrt(12) / performance_return.std())['Account']
+    withdraw = 0
+    max_withdraw = 0
+    for i in range(DAYS):
+        for j in range(DAYS):
+            if net_value['Account'][j] < net_value['Account'][i]:
+                withdraw = (net_value['Account'][i] - net_value['Account'][j]) / net_value['Account'][i]
+            if withdraw > max_withdraw:
+                max_withdraw = withdraw
+    hpr = (net_value['Account'][DAYS - 1] - net_value['Account'][0]) / net_value['Account'][0]
+    print('Holding Period Return: %.2f%%' % (hpr * 100))
+    print('Annual Return: %.2f%%' % (hpr * 12 * 100 / (DAYS - 1)))
+    print('Annual Sharpe: %.2f' % sharpe)
+    print('Maximum Withdraw: %.2f' % max_withdraw)
 
 
 if __name__ == '__main__':
