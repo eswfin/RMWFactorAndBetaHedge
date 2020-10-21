@@ -203,7 +203,7 @@ def performance_management(performance_return, net_value):
     withdraw = 0
     max_withdraw = 0
     for i in range(DAYS):
-        for j in range(DAYS):
+        for j in range(i, DAYS):
             if net_value['Account'][j] < net_value['Account'][i]:
                 withdraw = (net_value['Account'][i] - net_value['Account'][j]) / net_value['Account'][i]
             if withdraw > max_withdraw:
